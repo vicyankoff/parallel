@@ -2,21 +2,21 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-	int second_array_size;
-	int third_array_size;
-	int * second;
-	int * third;
+	int second_person_total_number_of_times;
+	int * second_person_avail_times;
+
+	int third_person_total_number_of_times;
+	int * third_person_avail_times;
 
 void *compare_times(void * arg) {
-	int compare_value = * (int *) arg;
+	int first_person_time = * (int *) arg;
 	free(arg);
-	int i;
-	int j;
-	for(i = 0; i < second_array_size; i++) {
-		if( second[i] == compare_value) {
-			for(j = 0; j < third_array_size; j++) {
-				if( compare_value == third[j]) {
-					printf("%d is a common meeting time.\n", compare_value);
+	int i, j;
+	for(i = 0; i < second_person_total_number_of_times; i++) {
+		if( second_person_avail_times[i] == first_person_time) {
+			for(j = 0; j < third_person_total_number_of_times; j++) {
+				if( first_person_time == third_person_avail_times[j]) {
+					printf("%d is a common meeting time.\n", first_person_time);
 				}
 			}
 		}
@@ -24,14 +24,12 @@ void *compare_times(void * arg) {
 	return(NULL);
 }
 
-void fill_array(FILE *myFile, int **array, int *array_size) {
-	int value;
-	fscanf(myFile, "%d", &value);
-	*array_size = value;
-	*array = (int *) malloc(sizeof(int) * value);
+void fill_array(FILE *myFile, int **person_avail_times, int *person_total_times) {
+	fscanf(myFile, "%d", person_total_times);
+	*person_avail_times = (int *) malloc(sizeof(int) * *person_total_times);
 	int i;
-	for(i = 0; i < *array_size; i++) {
-		fscanf(myFile, "%d", &(*array)[i]);
+	for(i = 0; i < *person_total_times; i++) {
+		fscanf(myFile, "%d", &(*person_avail_times)[i]);
 	}
 }
 
@@ -39,33 +37,31 @@ int main(int argc, char *argv[])
 {
 
 	FILE *myFile = fopen(argv[1], "r");
-	int * first;
-	int first_array_size;
+	int first_person_total_number_of_times, i;
+	int * first_person_avail_times;
 
-	fill_array(myFile, &first, &first_array_size);
-	fill_array(myFile, &second, &second_array_size);
-	fill_array(myFile, &third, &third_array_size);
+	fill_array(myFile, &first_person_avail_times, &first_person_total_number_of_times);
+	fill_array(myFile, &second_person_avail_times, &second_person_total_number_of_times);
+	fill_array(myFile, &third_person_avail_times, &third_person_total_number_of_times);
 
-	int i;
-	pthread_t *tid[first_array_size];
-	for(i = 0; i < first_array_size; i++) {
+	pthread_t *tid[first_person_total_number_of_times];
+	for(i = 0; i < first_person_total_number_of_times; i++) {
 		tid[i] = (pthread_t *) malloc(sizeof(pthread_t));
 	}
 
-	for(i = 0; i < first_array_size; i++) {
-		int *the_parm = (int *) malloc(sizeof(int));
-		*the_parm = first[i];
+	for(i = 0; i < first_person_total_number_of_times; i++) {
+		int *first_person_time = (int *) malloc(sizeof(int));
+		*first_person_time = first_person_avail_times[i];
 		if( pthread_create( tid[i], NULL,
 					compare_times,
-					(void *) the_parm)) {
+					(void *) first_person_time)) {
 
 			fprintf (stderr, "Error creating thread %d\n", i);
 		}
 	}
 
-	void **thread_ret_val = (void *) malloc (sizeof (void*));
-	for(i = 0; i < first_array_size; i++) {
-		if(pthread_join(*tid[i], thread_ret_val)) {
+	for(i = 0; i < first_person_total_number_of_times; i++) {
+		if(pthread_join(*tid[i], NULL)) {
 			fprintf(stderr, "Error joining with thread %d", i);
 		}
 	}
