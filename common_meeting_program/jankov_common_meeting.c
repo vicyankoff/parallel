@@ -8,6 +8,8 @@
 	int third_person_total_number_of_times;
 	int * third_person_avail_times;
 
+// if the first person's time matches with any of the second person times
+// check the times of the third person
 void *compare_times(void * arg) {
 	int first_person_time = * (int *) arg;
 	free(arg);
@@ -24,6 +26,7 @@ void *compare_times(void * arg) {
 	return(NULL);
 }
 
+// fill out each person's available times based on the first number in the line
 void fill_array(FILE *myFile, int **person_avail_times, int *person_total_times) {
 	fscanf(myFile, "%d", person_total_times);
 	*person_avail_times = (int *) malloc(sizeof(int) * *person_total_times);
@@ -40,15 +43,18 @@ int main(int argc, char *argv[])
 	int first_person_total_number_of_times, i;
 	int * first_person_avail_times;
 
+	// Fill out the arrays with the three people's available times
 	fill_array(myFile, &first_person_avail_times, &first_person_total_number_of_times);
 	fill_array(myFile, &second_person_avail_times, &second_person_total_number_of_times);
 	fill_array(myFile, &third_person_avail_times, &third_person_total_number_of_times);
 
+	// allocate memory for the threads of first person's times
 	pthread_t *tid[first_person_total_number_of_times];
 	for(i = 0; i < first_person_total_number_of_times; i++) {
 		tid[i] = (pthread_t *) malloc(sizeof(pthread_t));
 	}
 
+	// Start the threads to calculate common times
 	for(i = 0; i < first_person_total_number_of_times; i++) {
 		int *first_person_time = (int *) malloc(sizeof(int));
 		*first_person_time = first_person_avail_times[i];
