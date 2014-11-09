@@ -17,7 +17,7 @@
 int max_darts;
 
 int darts_in_circle;
-pthread_mutex_t * darts_in_circle_lock; needs a lock
+pthread_mutex_t * darts_in_circle_lock;
 
 int total_darts_currently_thrown;
 pthread_mutex_t * total_darts_currently_thrown_lock;
