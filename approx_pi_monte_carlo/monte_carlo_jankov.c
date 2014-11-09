@@ -93,7 +93,7 @@ void *print_pi(void *arg)
 			pthread_cond_wait (dart_multiple, darts_in_circle_lock);
 		}
 
-		double result = 4.0 * darts_in_circle / max_darts;
+		double result = 4.0 * darts_in_circle / total_darts_currently_thrown;
 		printf("Simulation: %d\n",total_darts_currently_thrown ); 
 		printf("Darts in circle is: %d\n",darts_in_circle); 
 		printf("Max Darts: %d\n",max_darts); 
