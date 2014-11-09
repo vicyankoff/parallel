@@ -1,35 +1,39 @@
+/* A program to approximate PI
+ * using the Monte Carlo simulation and pthreads
+ * by: Viktor Jankov
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <math.h>
 #include <time.h>
 
-/* A program to approximate PI
- * using the Monte Carlo simulation using pthreads
- * by: Viktor Jankov
- */
 
 #define TRUE 1
 #define PRINT_MULTIPLE 1000000
 #define EPSILON = 1e-5;
 
+// Max number of darts to be thrown for the simulation
 int max_darts;
-// needs a lock
+
 int darts_in_circle;
-pthread_mutex_t * darts_in_circle_lock;
-// needs a lock
+pthread_mutex_t * darts_in_circle_lock; needs a lock
+
 int total_darts_currently_thrown;
 pthread_mutex_t * total_darts_currently_thrown_lock;
 
+// Lock for the random number generator
 pthread_mutex_t * rand_lock;
 
+// All darts have been thrown
 int done;
-int dart_is_multiple;\
-pthread_mutex_t * dart_is_multiple_lock;
+
+// condition that controls the waking up of the print thread 
+int dart_is_multiple;
 pthread_cond_t * dart_multiple;
 
 
-
+// Function to throw darts
 void *simulate_darts (void *arg) 
 {
 	double x, y, c_x, c_y, dist;
@@ -38,14 +42,16 @@ void *simulate_darts (void *arg)
 
 	while (!done) 
 	{
-
+		// Generate two random doubles
 		pthread_mutex_lock(rand_lock);
 		x = (double) rand() / (double) RAND_MAX;
 		y = (double) rand() / (double) RAND_MAX;
 		pthread_mutex_unlock(rand_lock);
+
 		c_x = 0.5;
 		c_y = 0.5;
 
+		// Calculate distance from the random point to the center
 		dist = sqrt(pow(x - c_x, 2) + pow(y - c_y, 2));
 	
 		if ( dist <= 0.5)
@@ -59,12 +65,14 @@ void *simulate_darts (void *arg)
 		total_darts_currently_thrown++;
 		pthread_mutex_unlock(total_darts_currently_thrown_lock);
 
+		// Check if the simulation progress needs to be printed
 		if (total_darts_currently_thrown % PRINT_MULTIPLE == 0) 
 		{
 			dart_is_multiple = 1;
 			pthread_cond_broadcast (dart_multiple);
 		}
 
+		// Signal that the simulation is complete when all darts have been thrown
 		if (total_darts_currently_thrown >= max_darts) 
 		{
 			done = 1;
@@ -73,19 +81,19 @@ void *simulate_darts (void *arg)
 	pthread_exit (NULL);
 }
 
+// Function to print the current value of PI when signaled
 void *print_pi(void *arg)
 {
 	while (!done) 
 	{
 		pthread_mutex_lock(darts_in_circle_lock);
 
-		// Predicate P is dart is a multiple or dart is not a multiple
 		while (!dart_is_multiple) 
 		{
 			pthread_cond_wait (dart_multiple, darts_in_circle_lock);
 		}
 
-		double result = 4 * ((double)darts_in_circle / max_darts);
+		double result = 4.0 * darts_in_circle / max_darts;
 		printf("Simulation: %d\n",total_darts_currently_thrown ); 
 		printf("Darts in circle is: %d\n",darts_in_circle); 
 		printf("Max Darts: %d\n",max_darts); 
@@ -121,6 +129,7 @@ int main(int argc, char *argv[])
 	dart_multiple = (pthread_cond_t *) malloc (sizeof (pthread_cond_t));
 	pthread_cond_init (dart_multiple, NULL);
 	
+	// initialize the starting conditions
 	done = 0;
 	dart_is_multiple = 0;
 
@@ -128,21 +137,15 @@ int main(int argc, char *argv[])
 	int number_of_threads;
 	sscanf (argv[1], "%d", &number_of_threads);
 
-	// Get the number of simulations
+	// Get the number of darts to be thrown
 	sscanf (argv[2], "%d", &max_darts);
-
-	printf("Number of threads: %d\n", number_of_threads);
-	printf("Number of simulations: %d\n", max_darts);
  
 	// Allocate the array of pthread pointers
 	pthread_t **sim_thread = (pthread_t **) malloc (sizeof(pthread_t *) * number_of_threads);
 
 	
 	pthread_t * print_thread = (pthread_t *) malloc (sizeof(pthread_t *));
-	pthread_create (print_thread,
-									NULL,
-									print_pi,
-									NULL);
+	pthread_create (print_thread, NULL, print_pi, NULL);
 
 	// Allocate memory and create the simulation threads
 	for (i = 0; i < number_of_threads; i++)
@@ -150,10 +153,7 @@ int main(int argc, char *argv[])
 		sim_thread[i] = (pthread_t *) malloc (sizeof(pthread_t *));
 		int * sim_id = (int *) malloc (sizeof(int));
 		*sim_id = i;
-		if (pthread_create (sim_thread[i],
-												NULL,
-												simulate_darts,
-												(void *) sim_id))
+		if (pthread_create (sim_thread[i], NULL, simulate_darts, (void *) sim_id))
 		{
 			fprintf (stderr, "Error creating consumer thread %d.\n", i);
 			exit(-1);
