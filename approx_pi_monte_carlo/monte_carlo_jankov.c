@@ -32,7 +32,8 @@ int done;
 
 // condition that controls the waking up of the print thread 
 int dart_is_multiple;
-pthread_cond_t * dart_multiple;
+pthread_mutex_t * dart_is_multiple_lock;
+pthread_cond_t * dart_is_multiple_cond_var;
 
 
 // Function to throw darts
@@ -65,8 +66,10 @@ void *simulate_darts ()
 		// Check if the simulation progress needs to be printed
 		if (total_darts_currently_thrown % PRINT_MULTIPLE == 0) 
 		{
+			pthread_mutex_lock (dart_is_multiple_lock);
 			dart_is_multiple = TRUE;
-			pthread_cond_broadcast (dart_multiple);
+			pthread_mutex_unlock (dart_is_multiple_lock);
+			pthread_cond_broadcast (dart_is_multiple_cond_var);
 		}
 
 		// Signal that the simulation is complete when all darts have been thrown
@@ -83,11 +86,11 @@ void *print_pi()
 {
 	while (!done) 
 	{
-		pthread_mutex_lock(darts_in_circle_lock);
+		pthread_mutex_lock(dart_is_multiple_lock);
 
 		while (!dart_is_multiple) 
 		{
-			pthread_cond_wait (dart_multiple, darts_in_circle_lock);
+			pthread_cond_wait (dart_is_multiple_cond_var, dart_is_multiple_lock);
 		}
 
 		double result = 4.0 * darts_in_circle / total_darts_currently_thrown;
@@ -97,7 +100,7 @@ void *print_pi()
 		printf("Result: %f\n",result);
 		printf("\n");
 		dart_is_multiple = FALSE;
-		pthread_mutex_unlock(darts_in_circle_lock);
+		pthread_mutex_unlock(dart_is_multiple_lock);
 
 	}	
 	pthread_exit (NULL);
@@ -119,15 +122,18 @@ int main(int argc, char *argv[])
 	total_darts_currently_thrown_lock = (pthread_mutex_t *) malloc (sizeof (pthread_mutex_t));
 	pthread_mutex_init(total_darts_currently_thrown_lock, NULL);
 
-	darts_in_circle = 0; // number of darts in circle
-	total_darts_currently_thrown = 0; // total number of darts that have been thrown */
+	dart_is_multiple_lock = (pthread_mutex_t *) malloc (sizeof (pthread_mutex_t));
+	pthread_mutex_init(dart_is_multiple_lock, NULL);
 
-	dart_multiple = (pthread_cond_t *) malloc (sizeof (pthread_cond_t));
-	pthread_cond_init (dart_multiple, NULL);
+	dart_is_multiple_cond_var = (pthread_cond_t *) malloc (sizeof (pthread_cond_t));
+	pthread_cond_init (dart_is_multiple_cond_var, NULL);
 	
 	// initialize the starting conditions
 	done = 0;
 	dart_is_multiple = 0;
+
+	darts_in_circle = 0; 
+	total_darts_currently_thrown = 0; 
 
 	// Get the number of threads
 	int number_of_threads;
