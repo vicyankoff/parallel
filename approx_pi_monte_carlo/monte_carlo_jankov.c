@@ -93,11 +93,16 @@ void *print_pi()
 			pthread_cond_wait (dart_is_multiple_cond_var, dart_is_multiple_lock);
 		}
 
+		pthread_mutex_lock(darts_in_circle_lock);
+		pthread_mutex_lock(total_darts_currently_thrown_lock);
+
 		double result = 4.0 * darts_in_circle / total_darts_currently_thrown;
-		printf("Simulation: %d\n",total_darts_currently_thrown ); 
-		printf("Darts in circle is: %d\n",darts_in_circle); 
-		printf("Max Darts: %d\n",max_darts); 
-		printf("Result: %f\n",result);
+
+		pthread_mutex_unlock(darts_in_circle_lock);
+		pthread_mutex_unlock(total_darts_currently_thrown_lock);
+
+		printf("Simulation #: %d\n",total_darts_currently_thrown ); 
+		printf("PI: %f\n",result);
 		printf("\n");
 		dart_is_multiple = FALSE;
 		pthread_mutex_unlock(dart_is_multiple_lock);
