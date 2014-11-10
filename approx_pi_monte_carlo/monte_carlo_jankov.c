@@ -13,7 +13,7 @@
 #define FALSE 0
 #define RADIUS 0.5
 #define PRINT_MULTIPLE 1000000
-#define EPSILON = 1e-5;
+#define UNIT_SQUARE_AREA 4.0
 
 // Max number of darts to be thrown for the simulation
 int max_darts;
@@ -52,7 +52,7 @@ void *simulate_darts ()
 		// Calculate distance from the random point to the center
 		dist = sqrt(pow(x - RADIUS, 2) + pow(y - RADIUS, 2));
 	
-		if ( dist <= RADIUS)
+		if (dist <= RADIUS)
 		{
 			pthread_mutex_lock(darts_in_circle_lock);
 			darts_in_circle++;
@@ -75,6 +75,10 @@ void *simulate_darts ()
 		// Signal that the simulation is complete when all darts have been thrown
 		if (total_darts_currently_thrown >= max_darts) 
 		{
+			pthread_mutex_lock (dart_is_multiple_lock);
+			dart_is_multiple = TRUE;
+			pthread_mutex_unlock (dart_is_multiple_lock);
+			pthread_cond_broadcast (dart_is_multiple_cond_var);
 			done = TRUE;
 		} 
 	}
@@ -96,7 +100,7 @@ void *print_pi()
 		pthread_mutex_lock(darts_in_circle_lock);
 		pthread_mutex_lock(total_darts_currently_thrown_lock);
 
-		double result = 4.0 * darts_in_circle / total_darts_currently_thrown;
+		double result = UNIT_SQUARE_AREA * darts_in_circle / total_darts_currently_thrown;
 
 		pthread_mutex_unlock(darts_in_circle_lock);
 		pthread_mutex_unlock(total_darts_currently_thrown_lock);
@@ -107,7 +111,7 @@ void *print_pi()
 		dart_is_multiple = FALSE;
 		pthread_mutex_unlock(dart_is_multiple_lock);
 
-	}	
+	}
 	pthread_exit (NULL);
 }
 
