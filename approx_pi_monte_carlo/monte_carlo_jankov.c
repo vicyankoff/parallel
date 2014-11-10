@@ -107,8 +107,7 @@ void *print_pi()
 int main(int argc, char *argv[])
 {
 	int i; // looper
-	time_t t; // for seeding random
-	srand ((unsigned) time(&t)); // seed random
+	srand ((unsigned) time(NULL)); // seed random
 
 	// init the locks and cond variable
 	rand_lock = (pthread_mutex_t *) malloc (sizeof (pthread_mutex_t));
