@@ -36,11 +36,9 @@ pthread_cond_t * dart_multiple;
 
 
 // Function to throw darts
-void *simulate_darts (void *arg) 
+void *simulate_darts () 
 {
 	double x, y, dist;
-	int t_id = * (int *)arg;
-	free (arg);
 
 	while (!done) 
 	{
@@ -81,7 +79,7 @@ void *simulate_darts (void *arg)
 }
 
 // Function to print the current value of PI when signaled
-void *print_pi(void *arg)
+void *print_pi()
 {
 	while (!done) 
 	{
@@ -149,9 +147,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < number_of_threads; i++)
 	{
 		sim_thread[i] = (pthread_t *) malloc (sizeof(pthread_t *));
-		int * sim_id = (int *) malloc (sizeof(int));
-		*sim_id = i;
-		if (pthread_create (sim_thread[i], NULL, simulate_darts, (void *) sim_id))
+		if (pthread_create (sim_thread[i], NULL, simulate_darts, NULL))
 		{
 			fprintf (stderr, "Error creating consumer thread %d.\n", i);
 			exit(-1);
