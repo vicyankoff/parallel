@@ -10,6 +10,8 @@
 
 
 #define TRUE 1
+#define FALSE 0
+#define RADIUS 0.5
 #define PRINT_MULTIPLE 1000000
 #define EPSILON = 1e-5;
 
@@ -36,7 +38,7 @@ pthread_cond_t * dart_multiple;
 // Function to throw darts
 void *simulate_darts (void *arg) 
 {
-	double x, y, c_x, c_y, dist;
+	double x, y, dist;
 	int t_id = * (int *)arg;
 	free (arg);
 
@@ -48,13 +50,10 @@ void *simulate_darts (void *arg)
 		y = (double) rand() / (double) RAND_MAX;
 		pthread_mutex_unlock(rand_lock);
 
-		c_x = 0.5;
-		c_y = 0.5;
-
 		// Calculate distance from the random point to the center
-		dist = sqrt(pow(x - c_x, 2) + pow(y - c_y, 2));
+		dist = sqrt(pow(x - RADIUS, 2) + pow(y - RADIUS, 2));
 	
-		if ( dist <= 0.5)
+		if ( dist <= RADIUS)
 		{
 			pthread_mutex_lock(darts_in_circle_lock);
 			darts_in_circle++;
@@ -68,14 +67,14 @@ void *simulate_darts (void *arg)
 		// Check if the simulation progress needs to be printed
 		if (total_darts_currently_thrown % PRINT_MULTIPLE == 0) 
 		{
-			dart_is_multiple = 1;
+			dart_is_multiple = TRUE;
 			pthread_cond_broadcast (dart_multiple);
 		}
 
 		// Signal that the simulation is complete when all darts have been thrown
 		if (total_darts_currently_thrown >= max_darts) 
 		{
-			done = 1;
+			done = TRUE;
 		} 
 	}
 	pthread_exit (NULL);
@@ -99,7 +98,7 @@ void *print_pi(void *arg)
 		printf("Max Darts: %d\n",max_darts); 
 		printf("Result: %f\n",result);
 		printf("\n");
-		dart_is_multiple = 0;
+		dart_is_multiple = FALSE;
 		pthread_mutex_unlock(darts_in_circle_lock);
 
 	}	
@@ -139,13 +138,12 @@ int main(int argc, char *argv[])
 
 	// Get the number of darts to be thrown
 	sscanf (argv[2], "%d", &max_darts);
- 
-	// Allocate the array of pthread pointers
-	pthread_t **sim_thread = (pthread_t **) malloc (sizeof(pthread_t *) * number_of_threads);
-
-	
+ 	
 	pthread_t * print_thread = (pthread_t *) malloc (sizeof(pthread_t *));
 	pthread_create (print_thread, NULL, print_pi, NULL);
+
+	// Allocate the array of pthread pointers
+	pthread_t **sim_thread = (pthread_t **) malloc (sizeof(pthread_t *) * number_of_threads);
 
 	// Allocate memory and create the simulation threads
 	for (i = 0; i < number_of_threads; i++)
