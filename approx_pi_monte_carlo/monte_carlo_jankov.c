@@ -61,7 +61,6 @@ void *simulate_darts ()
 
 		pthread_mutex_lock(total_darts_currently_thrown_lock);
 		total_darts_currently_thrown++;
-		pthread_mutex_unlock(total_darts_currently_thrown_lock);
 
 		// Check if the simulation progress needs to be printed
 		if (total_darts_currently_thrown % PRINT_MULTIPLE == 0) 
@@ -71,6 +70,7 @@ void *simulate_darts ()
 			pthread_mutex_unlock (dart_is_multiple_lock);
 			pthread_cond_broadcast (dart_is_multiple_cond_var);
 		}
+		pthread_mutex_unlock(total_darts_currently_thrown_lock);
 
 		// Signal that the simulation is complete when all darts have been thrown
 		if (total_darts_currently_thrown >= max_darts) 
