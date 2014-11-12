@@ -115,7 +115,6 @@ void *print_pi()
 	pthread_exit (NULL);
 }
 
-
 int main(int argc, char *argv[])
 {
 	int i; // looper
