@@ -5,8 +5,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class CommonMeetingProblem {
+/*
+    A program to calculate the common meeting time problem
+    using JThreads for better efficiency
+    by Viktor Jankov
+*/
 
+public class JankovCMT {
+
+    // The times available for each person
     private static ArrayList<String> firstPersonTimes;
     private static ArrayList<String> secondPersonTimes;
     private static ArrayList<String> thirdPersonTimes;
@@ -17,6 +24,8 @@ public class CommonMeetingProblem {
         secondPersonTimes = new ArrayList<String>();
         thirdPersonTimes = new ArrayList<String>();
         List<String> availTimes;
+
+        // Read the file and parse the input into the hours for each person
         try {
             availTimes = Files.readAllLines(Paths.get(args[0]));
             Collections.addAll(firstPersonTimes, availTimes.get(0).split(" "));
@@ -31,32 +40,6 @@ public class CommonMeetingProblem {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static class CheckTimes implements Runnable {
-        int time;
-        ArrayList<String> secondPersonTimes = new ArrayList<String>();
-        ArrayList<String> thirdPersonTimes = new ArrayList<String>();
-
-        public CheckTimes(int time, ArrayList<String> secondPersonTimes, ArrayList<String> thirdPersonTimes) {
-            this.time = time;
-            this.secondPersonTimes = secondPersonTimes;
-            this.thirdPersonTimes = thirdPersonTimes;
-        }
-
-        @Override
-        public void run() {
-            for (int i = 0; i < secondPersonTimes.size(); i++) {
-                if( time == Integer.parseInt(secondPersonTimes.get(i))) {
-                    for (int j = 0; j < thirdPersonTimes.size(); j++) {
-                        if( time == Integer.parseInt(thirdPersonTimes.get(j))) {
-                            System.out.println( time + " is a common meeting time.");
-                        }
-                    }
-                }
-
-            }
         }
     }
 }
