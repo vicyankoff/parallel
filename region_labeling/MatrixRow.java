@@ -1,16 +1,12 @@
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MatrixRow implements Runnable {
 
     CyclicBarrier barrier;
-    CyclicBarrier barrier2;
     int[][] origMatrix;
-    AtomicInteger[][] labelMatrix;
+    int[][] labelMatrix;
     AtomicBoolean globalChange;
     AtomicBoolean localChange;
     int colSize;
@@ -29,8 +25,8 @@ public class MatrixRow implements Runnable {
      * @param globalChange the condition that controls whether or not the label matrix changed at all
      */
 
-    public MatrixRow(int[][] origMatrix, AtomicInteger[][] labelMatrix, int colSize,
-                     int rowSize, int tID, CyclicBarrier barrier, CyclicBarrier barrier2,
+    public MatrixRow(int[][] origMatrix, int[][] labelMatrix, int colSize,
+                     int rowSize, int tID, CyclicBarrier barrier,
                      AtomicBoolean globalChange,AtomicBoolean localChange) {
         this.origMatrix = origMatrix;
         this.labelMatrix = labelMatrix;
@@ -40,18 +36,43 @@ public class MatrixRow implements Runnable {
         this.rowSize = rowSize;
         this.tID = tID;
         this.barrier = barrier;
-        this.barrier2 = barrier2;
     }
 
     @Override
     public void run() {
+        int maxLabel;
+        int pixel;
         while (localChange.get()) {
             for (int col = 0; col < colSize; col++) {
-                AtomicInteger maxLabel = new AtomicInteger(findNeighborMaxLabel(origMatrix, labelMatrix, col, rowSize, colSize));
-                if (labelMatrix[tID][col].get() < maxLabel.get()) {
+                pixel = origMatrix[tID][col];
+                maxLabel = labelMatrix[tID][col];
+                if (tID - 1 >= 0) {
+                    if (labelMatrix[tID - 1][col] > maxLabel && origMatrix[tID - 1][col] == pixel) {
+                        maxLabel = labelMatrix[tID - 1][col];
+                    }
+                }
+
+                if (col - 1 >= 0) {
+                    if (labelMatrix[tID][col - 1] > maxLabel && origMatrix[tID][col - 1] == pixel) {
+                        maxLabel = labelMatrix[tID][col - 1];
+                    }
+                }
+
+                if (tID + 1 < rowSize) {
+                    if (labelMatrix[tID + 1][col] > maxLabel && origMatrix[tID + 1][col] == pixel) {
+                        maxLabel = labelMatrix[tID + 1][col];
+                    }
+                }
+
+                if (col + 1 < colSize) {
+                    if (labelMatrix[tID][col + 1] > maxLabel && origMatrix[tID][col + 1] == pixel) {
+                        maxLabel = labelMatrix[tID][col + 1];
+                    }
+                }
+                if (labelMatrix[tID][col] < maxLabel) {
+                    labelMatrix[tID][col] = maxLabel;
                     globalChange.set(true);
                 }
-                labelMatrix[tID][col].set(Integer.max(labelMatrix[tID][col].get(), maxLabel.get()));
             }
 
             try {
@@ -70,93 +91,14 @@ public class MatrixRow implements Runnable {
                 globalChange.set(false);
             }
 
-            try {
-                barrier2.await();
+            try{
+                barrier.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (BrokenBarrierException e) {
                 e.printStackTrace();
             }
         }
-    }
 
-    /**
-     * Find the maximum label for a given point in the matrix
-     *
-     * @param origMatrix  the original matrix
-     * @param labelMatrix the matrix with all labels
-     * @param col         the column number
-     * @param rowSize     the number of rows
-     * @param colSize     the number of columns
-     * @return the maximum label of a given point in the Matrix
-     */
-    private int findNeighborMaxLabel(int[][] origMatrix, AtomicInteger[][] labelMatrix, int col, int rowSize, int colSize) {
-        ArrayList<Integer> neighbors = new ArrayList<Integer>();
-        int pixelVal = origMatrix[tID][col];
-        if (tID == 0) {
-            if (col == 0) {
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID + 1, col, pixelVal);
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col + 1, pixelVal);
-            } else if (col == colSize - 1) {
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID + 1, col, pixelVal);
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col - 1, pixelVal);
-
-            } else {
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID + 1, col, pixelVal);
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col - 1, pixelVal);
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col + 1, pixelVal);
-            }
-        } else if (tID == rowSize - 1) {
-            if (col == 0) {
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID - 1, col, pixelVal);
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col + 1, pixelVal);
-
-            } else if (col == colSize - 1) {
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID - 1, col, pixelVal);
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col - 1, pixelVal);
-
-            } else {
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID - 1, col, pixelVal);
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col - 1, pixelVal);
-                checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col + 1, pixelVal);
-            }
-        } else if (col == 0) {
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID - 1, col, pixelVal);
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col + 1, pixelVal);
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID + 1, col, pixelVal);
-        } else if (col == colSize - 1) {
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID - 1, col, pixelVal);
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col - 1, pixelVal);
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID + 1, col, pixelVal);
-        } else {
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID - 1, col, pixelVal);
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID + 1, col, pixelVal);
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col - 1, pixelVal);
-            checkNeighborEquality(origMatrix, labelMatrix, neighbors, tID, col + 1, pixelVal);
-        }
-
-        if (neighbors.size() == 0) {
-            return -1;
-        } else {
-            return Collections.max(neighbors);
-        }
-    }
-
-    /**
-     * Check if a neighbour should be included in the list of neighbors of a point in the matrix
-     * If the values in the original matrix are the same it will be included
-     * otherwise it wont
-     *
-     * @param origMatrix    the original matrix
-     * @param labelMatrix   the matrix with labels
-     * @param neighborsList the list of all neighbors of a point
-     * @param row           the row coordinate
-     * @param col           the column coordinate
-     * @param pixelVal      the number of pixel in the original Matrix
-     */
-    private void checkNeighborEquality(int[][] origMatrix, AtomicInteger[][] labelMatrix, ArrayList<Integer> neighborsList, int row, int col, int pixelVal) {
-        if (origMatrix[row][col] == pixelVal) {
-            neighborsList.add(labelMatrix[row][col].get());
-        }
     }
 }

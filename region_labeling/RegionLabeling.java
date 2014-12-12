@@ -3,7 +3,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A program to determine the common region labeling from a given Matrix
@@ -19,16 +18,16 @@ public class RegionLabeling {
         // Fill out the original matrix from a file
         int[][] origMatrix = initOrigMatrix(args[0]);
         // Init the label matrix
-        AtomicInteger[][] labelMatrix = initLabelMatrix(rowSize, colSize);
+        int[][] labelMatrix = initLabelMatrix(rowSize, colSize);
         MatrixRow[] matrixRows = new MatrixRow[rowSize];
         CyclicBarrier barrier = new CyclicBarrier(rowSize);
-        CyclicBarrier barrier2 = new CyclicBarrier(rowSize);
+
         AtomicBoolean globalChange = new AtomicBoolean(false);
         AtomicBoolean localChange = new AtomicBoolean(true);
 
         for (int i = 0; i < rowSize; i++) {
             matrixRows[i] = new MatrixRow(origMatrix, labelMatrix,
-                    colSize, rowSize, i, barrier, barrier2,
+                    colSize, rowSize, i, barrier,
                     globalChange,localChange);
         }
 
@@ -38,7 +37,7 @@ public class RegionLabeling {
 
         printMatrix(origMatrix, rowSize, colSize, "Regular Matrix");
         System.out.println();
-        printLabelMatrix(labelMatrix, rowSize, colSize, "Label Matrix");
+        printMatrix(labelMatrix, rowSize, colSize, "Label Matrix");
     }
 
     /**
@@ -71,12 +70,12 @@ public class RegionLabeling {
      * @param colSize the number of cols
      * @return
      */
-    private static AtomicInteger[][] initLabelMatrix(int rowSize, int colSize) {
-        AtomicInteger[][] labelMatrix = new AtomicInteger[rowSize][colSize];
+    private static int[][] initLabelMatrix(int rowSize, int colSize) {
+        int[][] labelMatrix = new int[rowSize][colSize];
         int val = 0;
         for (int i = 0; i < rowSize; i++) {
             for (int j = 0; j < colSize; j++) {
-                labelMatrix[i][j] = new AtomicInteger(val++);
+                labelMatrix[i][j] = val++;
             }
         }
         return labelMatrix;
@@ -95,28 +94,6 @@ public class RegionLabeling {
             for (int j = 0; j < colSize; j++) {
                 if (matrix[i][j] < 10) {
                     System.out.print(" " + matrix[i][j] + " ");
-                } else {
-                    System.out.print(matrix[i][j] + " ");
-                }
-            }
-            System.out.println();
-        }
-        System.out.println();
-    }
-
-    /**
-     * Print the label matrix
-     * @param matrix the matrix to be printed
-     * @param rowSize the number of rows
-     * @param colSize the number of columns
-     * @param matrixName the name of the matrix
-     */
-    private static void printLabelMatrix(AtomicInteger[][] matrix, int rowSize, int colSize, String matrixName) {
-        System.out.println(matrixName);
-        for (int i = 0; i < rowSize; i++) {
-            for (int j = 0; j < colSize; j++) {
-                if (matrix[i][j].get() < 10) {
-                    System.out.print(" " + matrix[i][j].get() + " ");
                 } else {
                     System.out.print(matrix[i][j] + " ");
                 }
