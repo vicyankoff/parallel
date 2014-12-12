@@ -1,24 +1,32 @@
-import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Updater {
 
-    ArrayList<MatrixRow> threadArray;
-    boolean[] localGo;
+    AtomicBoolean[] localGo;
+
+    /**
+     * Construct the corresponding booleans for all threds
+     * @param row
+     */
     public Updater(int row) {
-        localGo = new boolean[row];
+        localGo = new AtomicBoolean[row];
         for (int i = 0; i < localGo.length; i++) {
-            localGo[i] = true;
+            localGo[i] = new AtomicBoolean(true);
         }
     }
 
 
     public void updateCond(boolean val) {
         for (int i = 0; i < localGo.length; i++) {
-            localGo[i] = val;
+            localGo[i].set(val);
         }
     }
 
     public boolean get(int val) {
-        return localGo[val];
+        return localGo[val].get();
+    }
+
+    public void set(int val, boolean cond) {
+        localGo[val].set(cond);
     }
 }
